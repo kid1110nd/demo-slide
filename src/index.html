@@ -1,13 +1,193 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>DemoSlide</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-  <app-root></app-root>
-</body>
+<!DOCTYPE html>
+<html>
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+  />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <head>
+    <style>
+      :root {
+        --shadow: rgba(0, 0, 0, 0.8);
+      }
+
+      * {
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+      }
+
+      body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .slider-container {
+        height: 100vh;
+        display: inline-flex;
+        overflow: hidden;
+        scrollbar-width: none;
+        transform: translateX(0);
+        will-change: transform;
+        transition: transform 0.3s ease-out;
+        position: absolute;
+      }
+
+      .slide {
+        max-height: 100vh;
+        width: 100vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        cursor: pointer;
+      }
+
+      @media (min-width: 1200px) {
+        .slide {
+          padding: 3rem;
+        }
+      }
+
+      .slide img {
+        height: 90vh;
+        width: 80vw;
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 5px 5px 50px -1px var(--shadow);
+        border-radius: 4px;
+        user-select: none;
+      }
+
+      i {
+        position: absolute;
+        z-index: 100;
+        font-size: 100px;
+        top: 45vh;
+        cursor: pointer;
+      }
+
+      #right {
+        right: -89vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slider-container"></div>
+    <i id="left" class="glyphicon glyphicon-chevron-left" onclick="next()"></i>
+    <i
+      id="right"
+      class="glyphicon glyphicon-chevron-right"
+      onclick="prev()"
+    ></i>
+  </body>
+  <script type="text/javascript">
+    // Lấy ảnh
+    const slideContainer = document.querySelector('.slider-container');
+    var anh = [];
+    for (let i = 1; i < 10; i++) {
+      anh[i] = `anh ${i}.jpeg`;
+    }
+
+    for (let i = 1; i < anh.length; i++) {
+      slideContainer.innerHTML += `
+             <div class="slide">
+               <img src="/assets/images/${anh[i]}" alt="no image"
+             </div>
+           `;
+    }
+
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    let isDragging = false,
+      startPos = 0,
+      currentTranslate = 0,
+      prevTranslate = 0,
+      animationID,
+      currentIndex = 0;
+    slides.forEach((slide, index) => {
+      const slideImage = slide.querySelector('img');
+      slideImage.addEventListener('dragstart', (e) => e.preventDefault());
+      // touch event
+      slide.addEventListener('touchstart', touchStart(index));
+      slide.addEventListener('touchend', touchEnd);
+      slide.addEventListener('touchmove', touchMove);
+      // mouse events
+      slide.addEventListener('mousedown', touchStart(index));
+      slide.addEventListener('mouseup', touchEnd);
+      slide.addEventListener('mousemove', touchMove);
+      slide.addEventListener('mouseleave', touchEnd);
+    });
+
+    window.addEventListener('resize', resetIndex);
+
+    function getIndex(event) {
+      return event.type.includes('mouse')
+        ? event.pageX
+        : event.touches[0].clientX;
+    }
+
+    function touchStart(index) {
+      return function (event) {
+        currentIndex = index;
+        startPos = getIndex(event);
+        isDragging = true;
+        animationID = requestAnimationFrame(animation);
+      };
+    }
+
+    function touchMove(event) {
+      if (isDragging) {
+        const currentPosition = getIndex(event);
+        currentTranslate = prevTranslate + currentPosition - startPos;
+      }
+    }
+
+    function touchEnd(event) {
+      cancelAnimationFrame(animationID);
+      isDragging = false;
+      const movedBy = currentTranslate - prevTranslate;
+      if (movedBy < -100 && currentIndex <= slides.length) {
+        currentIndex += 1;
+        if (currentIndex > slides.length - 1) {
+          currentIndex = 9;
+        }
+      }
+
+      if (movedBy > 100 && currentIndex >= 0) {
+        if (currentIndex == 0) currentIndex = slides.length - 1;
+        else currentIndex -= 1;
+      }
+
+      resetIndex();
+    }
+
+    function animation() {
+      setSliderPosition();
+      if (isDragging) requestAnimationFrame(animation);
+    }
+
+    function resetIndex() {
+      currentTranslate = currentIndex * -window.innerWidth;
+      prevTranslate = currentTranslate;
+      setSliderPosition();
+    }
+
+    function setSliderPosition() {
+      slideContainer.style.transform = `translateX(${currentTranslate}px)`;
+    }
+
+    function next() {
+      currentIndex++;
+      if (currentIndex > slides.length - 1) currentIndex = 0;
+      resetIndex();
+    }
+
+    function prev() {
+      if (currentIndex == 0) currentIndex = slides.length;
+      currentIndex--;
+      resetIndex();
+    }
+  </script>
 </html>
